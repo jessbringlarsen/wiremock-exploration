@@ -9,6 +9,7 @@ import static dk.bringlarsen.wiremock.CustomerDTOBuilder.create;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -18,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import dk.bringlarsen.wiremock.model.CustomerDTO;
+import io.restassured.RestAssured;
 import wiremock.org.apache.http.HttpStatus;
 
 /**
@@ -60,6 +62,17 @@ public class CustomerServiceTest {
         Optional<CustomerDTO> response = service.getCustomerById(aCustomer.getId());
 
         assertThat(response.isPresent(), is(false));
+    }
+
+    @Test
+    public void whenCustomerRequestExpectIdNotEmpty() {
+        WireMock.givenThat(get(urlEqualTo(endpoint))
+            .willReturn(okForJson(aCustomer)));
+
+        RestAssured.get(endpoint, Collections.emptyMap())
+            .then()
+                .statusCode(200)
+                .body("id", is(aCustomer.getId()));
     }
 
     @After
