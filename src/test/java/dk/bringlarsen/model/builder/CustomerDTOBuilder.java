@@ -1,4 +1,4 @@
-package dk.bringlarsen.wiremock;
+package dk.bringlarsen.model.builder;
 
 import dk.bringlarsen.wiremock.model.CustomerDTO;
 
@@ -6,7 +6,7 @@ public class CustomerDTOBuilder {
 
     private final CustomerDTO customer;
 
-    public static CustomerDTOBuilder create() {
+    public static CustomerDTOBuilder aCustomer() {
         return new CustomerDTOBuilder();
     }
 

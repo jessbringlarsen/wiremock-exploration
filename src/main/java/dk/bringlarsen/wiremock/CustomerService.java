@@ -11,10 +11,13 @@ public class CustomerService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    public static CustomerService customerService() {
+        return new CustomerService();
+    }
+
     public Optional<CustomerDTO> getCustomerById(int id) {
         try {
-            String endpoint = CustomerServiceEndpointBuilder.create().withId(id).build();
-            return Optional.ofNullable(restTemplate.getForObject(endpoint, CustomerDTO.class));
+            return Optional.ofNullable(restTemplate.getForObject("http://localhost:8080/customers/"+id, CustomerDTO.class));
         } catch (HttpServerErrorException e) {
             return Optional.empty();
         }

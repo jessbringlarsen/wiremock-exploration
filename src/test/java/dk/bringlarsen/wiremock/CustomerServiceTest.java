@@ -5,49 +5,48 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.givenThat;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static dk.bringlarsen.wiremock.CustomerDTOBuilder.create;
+import static dk.bringlarsen.model.builder.CustomerDTOBuilder.aCustomer;
+import static dk.bringlarsen.wiremock.CustomerService.customerService;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.util.Collections;
 import java.util.Optional;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import dk.bringlarsen.wiremock.model.CustomerDTO;
-import io.restassured.RestAssured;
 import wiremock.org.apache.http.HttpStatus;
 
 /**
- * Test that utilize WireMock as a external process to stub an external service.
- *  
+ * Demonstrate using wiremock for doing black box testing - in this case the
+ * {@link CustomerService} is the subject under test.
+ * </p>
+ * We are
+ * </p>
+ * Test that utilize external process instance of WireMock to stub an external
+ * service which must be running for the tests to run.
+ * </p>
+ * For simplicity and transparency no connection strings have been refactored to
+ * a builder or static strings - which is recommended for production code.
  */
 public class CustomerServiceTest {
-
-    private String endpoint;
-    private CustomerDTO aCustomer;
-    private CustomerService service;
-
+   
     @Before
     public void setup() {
-        service = new CustomerService();
-        CustomerServiceEndpointBuilder serviceEndpointBuilder = CustomerServiceEndpointBuilder.create();
-        WireMock.configureFor(serviceEndpointBuilder.getHost(), serviceEndpointBuilder.getPort());
-
-        aCustomer = create().withId(1).withName("Customer name").withAge(35).build();
-        endpoint = serviceEndpointBuilder.withId(aCustomer.getId()).buildRelative();
+        WireMock.configureFor("http", "localhost", 8080);
+        WireMock.resetToDefault();
     }
 
     @Test
     public void whenCustomerRequestExpectHttpStatusOk() {
-        givenThat(get(urlEqualTo(endpoint))
+        CustomerDTO aCustomer = aCustomer().withId(1).withName("aName").withAge(35).build();
+        givenThat(get(urlEqualTo("/customers/1"))
             .willReturn(okForJson(aCustomer)));
 
-        CustomerDTO response = service.getCustomerById(aCustomer.getId()).get();
+        CustomerDTO response = customerService().getCustomerById(aCustomer.getId()).get();
 
         assertThat(response.getId(), is(aCustomer.getId()));
         assertThat(response.getName(), is(aCustomer.getName()));
@@ -56,27 +55,12 @@ public class CustomerServiceTest {
 
     @Test
     public void whenInternalServerErrorExpectNoResponse() {
-        givenThat(get(urlEqualTo(endpoint))
-                .willReturn(aResponse().withStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR)));
+        givenThat(get(urlEqualTo("/customers/1"))
+                .willReturn(aResponse()
+                .withStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR)));
 
-        Optional<CustomerDTO> response = service.getCustomerById(aCustomer.getId());
+        Optional<CustomerDTO> response = customerService().getCustomerById(1);
 
         assertThat(response.isPresent(), is(false));
-    }
-
-    @Test
-    public void whenCustomerRequestExpectIdNotEmpty() {
-        WireMock.givenThat(get(urlEqualTo(endpoint))
-            .willReturn(okForJson(aCustomer)));
-
-        RestAssured.get(endpoint, Collections.emptyMap())
-            .then()
-                .statusCode(200)
-                .body("id", is(aCustomer.getId()));
-    }
-
-    @After
-    public void tearDown() {
-        WireMock.delete(endpoint);
     }
 }
