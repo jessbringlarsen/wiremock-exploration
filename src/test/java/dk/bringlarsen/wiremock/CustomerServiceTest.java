@@ -1,24 +1,20 @@
 package dk.bringlarsen.wiremock;
 
+import com.github.tomakehurst.wiremock.core.Options;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import dk.bringlarsen.wiremock.model.CustomerDTO;
+import org.apache.http.HttpStatus;
+import org.junit.Rule;
+import org.junit.Test;
+
+import java.util.Optional;
+
 import static com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder.okForJson;
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.givenThat;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static dk.bringlarsen.model.builder.CustomerDTOBuilder.aCustomer;
 import static dk.bringlarsen.wiremock.CustomerService.customerService;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-
-import java.util.Optional;
-
-import com.github.tomakehurst.wiremock.client.WireMock;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import dk.bringlarsen.wiremock.model.CustomerDTO;
-import wiremock.org.apache.http.HttpStatus;
 
 /**
  * Demonstrate using wiremock for doing black box testing - in this case the
@@ -33,12 +29,9 @@ import wiremock.org.apache.http.HttpStatus;
  * a builder or static strings - which is recommended for production code.
  */
 public class CustomerServiceTest {
-   
-    @Before
-    public void setup() {
-        WireMock.configureFor("http", "localhost", 8080);
-        WireMock.resetToDefault();
-    }
+
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(Options.DYNAMIC_PORT);
 
     @Test
     public void whenCustomerRequestExpectHttpStatusOk() {
@@ -46,7 +39,7 @@ public class CustomerServiceTest {
         givenThat(get(urlEqualTo("/customers/1"))
             .willReturn(okForJson(aCustomer)));
 
-        CustomerDTO response = customerService().getCustomerById(aCustomer.getId()).get();
+        CustomerDTO response = customerService(wireMockRule.port()).getCustomerById(aCustomer.getId()).get();
 
         assertThat(response.getId(), is(aCustomer.getId()));
         assertThat(response.getName(), is(aCustomer.getName()));
@@ -59,7 +52,7 @@ public class CustomerServiceTest {
                 .willReturn(aResponse()
                 .withStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR)));
 
-        Optional<CustomerDTO> response = customerService().getCustomerById(1);
+        Optional<CustomerDTO> response = customerService(wireMockRule.port()).getCustomerById(1);
 
         assertThat(response.isPresent(), is(false));
     }

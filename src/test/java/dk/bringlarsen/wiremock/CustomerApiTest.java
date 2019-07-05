@@ -1,18 +1,19 @@
 package dk.bringlarsen.wiremock;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.Options;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import dk.bringlarsen.wiremock.model.CustomerDTO;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
 import static com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder.okForJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static dk.bringlarsen.model.builder.CustomerDTOBuilder.aCustomer;
 import static org.hamcrest.Matchers.is;
-
-import com.github.tomakehurst.wiremock.client.WireMock;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.test.web.reactive.server.WebTestClient;
-
-import dk.bringlarsen.wiremock.model.CustomerDTO;
 
 /**
  * Demonstrate using wiremock for doing verification of endpoint response using the {@link WebTestClient}.
@@ -28,15 +29,16 @@ import dk.bringlarsen.wiremock.model.CustomerDTO;
  */
 public class CustomerApiTest {
 
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(Options.DYNAMIC_PORT);
+
     private WebTestClient webTestClient;
-    
+
+   
     @Before
     public void setup() {
-        WireMock.configureFor("http", "localhost", 8080);
-        WireMock.resetToDefault();
-        
         webTestClient = WebTestClient.bindToServer()
-        .baseUrl("http://localhost:8080/")
+        .baseUrl("http://localhost:" + wireMockRule.port())
         .build();
     }
 
