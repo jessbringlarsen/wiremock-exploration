@@ -1,12 +1,10 @@
 package dk.bringlarsen.wiremock;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.Options;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import dk.bringlarsen.wiremock.model.CustomerDTO;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import static com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder.okForJson;
@@ -27,35 +25,27 @@ import static org.hamcrest.Matchers.is;
  * For simplicity and transparency no connection strings have been refactored to a builder 
  * or static strings - which is recommended for production code.
  */
+@WireMockTest
 public class CustomerApiTest {
-
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(Options.DYNAMIC_PORT);
-
-    private WebTestClient webTestClient;
-
-   
-    @Before
-    public void setup() {
-        webTestClient = WebTestClient.bindToServer()
-        .baseUrl("http://localhost:" + wireMockRule.port())
-        .build();
-    }
 
     /**
      * Example test showing the use of WireMock and WebTestClient for verifying the response.
      */
     @Test
-    public void whenCustomerRequestExpectNonEmptyResponse() {
+    public void whenCustomerRequestExpectNonEmptyResponse(WireMockRuntimeInfo wireMock) {
         CustomerDTO aCustomer = aCustomer().withId(1).withName("aName").withAge(35).build();
 
         WireMock.givenThat(get(urlEqualTo("/customers/1"))
             .willReturn(okForJson(aCustomer)));
-      
-          webTestClient.get().uri("/customers/1").exchange()
+
+          setup(wireMock.getHttpPort()).get().uri("/customers/1").exchange()
             .expectStatus().isOk()
             .expectBody()
               .jsonPath("id").value(is(aCustomer.getId()))
               .jsonPath("name").value(is(aCustomer.getName()));
+    }
+
+    WebTestClient setup(int port) {
+        return WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
     }
 }
