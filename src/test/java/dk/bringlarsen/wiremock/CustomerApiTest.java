@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.is;
  * Demonstrate using wiremock for doing verification of endpoint response using the {@link WebTestClient}.
  * Using the {@link WebTestClient} we are able to decouple us from the response object by only asserting
  * the fields we are interested in. This is particular important if the api we are utilizing is not under 
- * our control and we want to avoid brittle tests as the api is changing.
+ * our control, and we want to avoid brittle tests as the api is changing.
  * </p>
  * Test that utilize external process instance of WireMock to stub an external
  * service which must be running for the tests to run.
@@ -38,14 +38,14 @@ public class CustomerApiTest {
         WireMock.givenThat(get(urlEqualTo("/customers/1"))
             .willReturn(okForJson(aCustomer)));
 
-          setup(wireMock.getHttpPort()).get().uri("/customers/1").exchange()
+          client(wireMock).get().uri("/customers/1").exchange()
             .expectStatus().isOk()
             .expectBody()
               .jsonPath("id").value(is(aCustomer.getId()))
               .jsonPath("name").value(is(aCustomer.getName()));
     }
 
-    WebTestClient setup(int port) {
-        return WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
+    WebTestClient client(WireMockRuntimeInfo wireMock) {
+        return WebTestClient.bindToServer().baseUrl(wireMock.getHttpBaseUrl()).build();
     }
 }
