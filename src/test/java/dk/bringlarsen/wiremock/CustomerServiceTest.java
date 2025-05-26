@@ -1,7 +1,5 @@
 package dk.bringlarsen.wiremock;
 
-import com.github.tomakehurst.wiremock.core.Options;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import dk.bringlarsen.wiremock.model.CustomerDTO;
@@ -13,7 +11,6 @@ import java.util.Optional;
 import static com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder.okForJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static dk.bringlarsen.model.builder.CustomerDTOBuilder.aCustomer;
-import static dk.bringlarsen.wiremock.CustomerService.customerService;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
@@ -37,7 +34,7 @@ public class CustomerServiceTest {
         givenThat(get(urlEqualTo("/customers/1"))
             .willReturn(okForJson(aCustomer)));
 
-        CustomerDTO response = customerService(wireMock.getHttpPort()).getCustomerById(aCustomer.getId()).get();
+        CustomerDTO response = CustomerService.create().withPort(wireMock.getHttpPort()).getCustomerById(aCustomer.getId()).orElseThrow();
 
         Assertions.assertEquals(aCustomer.getId(), response.getId());
         Assertions.assertEquals(aCustomer.getName(), response.getName());
@@ -50,7 +47,7 @@ public class CustomerServiceTest {
                 .willReturn(aResponse()
                 .withStatus(500)));
 
-        Optional<CustomerDTO> response = customerService(wireMock.getHttpPort()).getCustomerById(1);
+        Optional<CustomerDTO> response = CustomerService.create().withPort(wireMock.getHttpPort()).getCustomerById(1);
 
         assertFalse(response.isPresent());
     }
